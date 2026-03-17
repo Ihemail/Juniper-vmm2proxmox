@@ -1,7 +1,7 @@
 # Juniper-vmm2proxmox
 Juniper's VMM config to Proxmox VM Conversion &amp; Deployer via terraform with all inter-connection bridges
 
-# VMM Config to Proxmox Full Deploy Bundle (with Terraform + Python)
+# VMM Config to Proxmox Full Deploy Bundle (Terraform + Python)
 
 ## Overview
 - Converts VMM config to Proxmox `qm.conf` files and an attach plan
