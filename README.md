@@ -1,5 +1,6 @@
 # Juniper-vmm2proxmox
 Juniper's VMM config to Proxmox VM Conversion &amp; Deployer via terraform with all inter-connection bridges
+
 # VMM Config to Proxmox Full Deploy Bundle (Terraform + Python)
 
 ## Overview
@@ -37,7 +38,7 @@ This README consolidates **all logic, knobs, VM specifications, bridge behavior,
 	- [Windows 10/11 - Python 3 and Terraform Installation](#windows-1011---python-3-and-terraform-installation)
 
 ---
-# 1. Repository Layout
+## 1. Repository Layout
 ```
 .
 ├── config.yaml
@@ -67,7 +68,7 @@ This README consolidates **all logic, knobs, VM specifications, bridge behavior,
 ```
 
 ---
-# 2. Where to Configure Proxmox Server Details
+## 2. Where to Configure Proxmox Server Details
 Edit **config.yaml**:
 ```yaml
 proxmox:
@@ -83,7 +84,7 @@ proxmox:
 All paths above are **on Proxmox**, not the runner.
 
 ---
-# 3. Where to Place Default Images
+## 3. Where to Place Default Images
 Upload all images to Proxmox host under:
 ```
 /root/import/
@@ -101,10 +102,10 @@ Examples:
 `overrides.yaml` maps VM types → default images.
 
 ---
-# 4. VM Families, CPU & RAM Defaults
+## 4. VM Families, CPU & RAM Defaults
 These values come from `type_registry.yaml`.
 
-## 4.1 Linux VMs
+### 4.1 Linux VMs
 ```
 Machine: q35
 NIC Model: virtio
@@ -114,7 +115,7 @@ Disk: IDE0
 Boot: order=ide0
 ```
 
-## 4.2 Modem (OpenWRT-like)
+### 4.2 Modem (OpenWRT-like)
 ```
 Machine: q35
 NIC Model: virtio
@@ -122,8 +123,8 @@ CPU Cores: 1
 RAM: from VMM
 ```
 
-## 4.3 vMX Platform
-### vMX RE
+### 4.3 vMX Platform
+#### vMX RE
 ```
 Machine: pc-i440fx-7.0
 Cores: 1
