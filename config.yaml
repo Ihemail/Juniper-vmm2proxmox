@@ -1,0 +1,10 @@
+
+proxmox:
+  host: "192.168.0.23"
+  ssh_user: "root"
+  ssh_port: 22
+  ssh_private_key_path: "C:/Users/ihazra/.ssh/id_rsa"
+  image_dir: "/root/import"
+  iso_storage_id: "local"
+  iso_storage_path: "/var/lib/vz/template/iso"
+  node_name: "Proxmox-Dell3020"

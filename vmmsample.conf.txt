@@ -1,0 +1,176 @@
+
+#include "/vmm/bin/common.defs"
+#include "/vmm/data/user_disks/vmxc/common.vmx.p3.defs"
+
+// -- Image: vMX(MX240/MX480/MX960 / EX9204/EX9208/EX9214) [codes: 48/33/21 / 149/150/151]
+#define VMX_DISK basedisk "/vmm/data/test/junos-vmx-x86-64-21.4R3-S2.3.vmdk";
+
+// -- Image: Linux/CentOS/Ubuntu/Windows - without CDROM
+#define CENTOS7_base basedisk "/data/user_disks/test/JunOS-Olive-12.1R1.9-disk.vmdk";
+
+// -- Image: vModem/vOpenWRT/LEDE
+#define OPENWRT_base basedisk "/vmm/data/user_disks/test/lede-disk01.vmdk";
+
+// -- Image: vQFX10k
+#define VQFX10_DISK  basedisk  "/vmm/data/user_disks/test/vqfxre-20.2R2.qcow2";
+#define COSIM_DISK basedisk "/vmm/data/user_disks/test/vqfxpfe-20.2R2.qcow2";
+
+// -- Image: vSRX
+#define VSRX_DISK basedisk "/vmm/data/user_disks/test/junos-vsrx3-x86-64-23.2R2.21.qcow2";
+
+// -- Image: vArdbeg
+#define EVOVPTX_DISK1 "/vmm/data/user_disks/test/images/junos-evo-install-ptx-fixed-x86-64-21.4R3-S4.8-EVO.iso"
+#define EVOVPTX_FPC_CSPP_IMG "/vmm/data/base_disks/junos/vevo/ubuntu_vm_evo.qcow2"
+#define VMM_ENV_CSPP_CFG_DIR /vmm/data/user_disks/evo_test/EVOvSCAPA/        // Do NOT enclose on quotes!
+
+
+config "VMM_Sample_Topology" {
+
+// ----- Linux Server/Windows nodes [CentOS/Ubuntu/Redhat/WINDOWS]
+//-------------------------------------------------------------------------
+  vm "vm_centos_1" {
+    hostname "vm_centos_1";
+    CENTOS7_base
+    ncpus 4;
+    memory 256;
+    setvar "boot_noveriexec" "yes";
+    interface "em0" { bridge "ext"; };
+    interface "em1" { bridge "NETBR_1"; };
+    interface "em2" { bridge "NETBR_2"; };
+    interface "em3" { bridge "NETBR_3"; };
+  };
+
+
+// ----- vModem/vCPE nodes [OpenWRT/LEDE]
+//-------------------------------------------------------------------------
+  vm "vm_openwrt_gw" {
+    hostname "vm_openwrt_gw";
+    OPENWRT_base
+    ncpus 2;
+    memory 128;
+    setvar "boot_noveriexec" "yes";
+    interface "em0" { bridge "ext"; };
+    interface "em1" { bridge "NETBR_1"; };
+    interface "em2" { bridge "NETBR_2"; };
+    interface "em3" { bridge "NETBR_3"; };
+  };
+
+
+// ----- vSRX nodes [VSRX 3.0]
+//-------------------------------------------------------------------------  
+vm "vsrx" {
+    hostname "vsrx-1";
+    VSRX_DISK
+    ncpus 1;
+    memory 1024;
+    interface "em0" { EXTERNAL; };
+    interface "em1" { bridge "NETBR_1";  }; // ge-0/0/0
+    interface "em2" { bridge "NETBR_2";  }; // ge-0/0/1
+    interface "em3" { bridge "NETBR_3";  }; // ge-0/0/2
+    interface "em4" { bridge "NETBR_4";  }; // ge-0/0/3
+
+};
+
+
+// ----- vQFX nodes [vQFX10k]
+//-------------------------------------------------------------------------  
+vm "pecosim-1" {
+        hostname "pecosim-1"; 
+        COSIM_DISK
+        memory 4096;
+        ncpus 2;
+        interface "em0" { EXTERNAL; };
+        interface "em1" { bridge "pecosim_bridge_1"; ipaddr "169.254.0.1"; };
+    };
+ 
+vm "vqfx10k-1" {
+        hostname "vqfx1";
+        VQFX10_DISK
+        //setvar "simulation" "VELIT";
+        setvar "qemu_args" "-smbios type=1,product=VELIT";
+        VQFX_SYSTEST_CONFIG
+        setvar "boot_noveriexec" "YES";
+        interface "em0" { EXTERNAL; };
+        interface "em1" { bridge "pecosim_bridge_1"; ipaddr "169.254.0.2"; };
+        interface "em3" { bridge "NETBR_1";}; //xe-0/0/0
+        interface "em4" { bridge "NETBR_2";}; //xe-0/0/1
+        interface "em5" { bridge "NETBR_3";}; //xe-0/0/2
+        interface "em6" { bridge "NETBR_4";}; //xe-0/0/3
+    }; 
+
+
+// ----- vMX nodes [MX240]
+//-------------------------------------------------------------------------  
+//#undef VMX_CHASSIS_I2CID
+//#define VMX_CHASSIS_I2CID 21
+  #undef VMX_CHASSIS_I2CID
+  #define VMX_CHASSIS_I2CID 48
+  #undef VMX_CHASSIS_NAME
+  #define VMX_CHASSIS_NAME vmx_1
+  VMX_CHASSIS_START()
+    VMX_RE_START(vmx_1, 0)
+        VMX_RE_INSTANCE(vmx_1, VMX_DISK, VMX_RE_I2CID, 0)
+    VMX_RE_END
+   VMX_MPC_START(vmx_1_MPC,0)
+        VMX_MPC_INSTANCE(vmx_1_MPC, VMX_DISK, VMX_MPC_I2CID, 0)
+          VMX_CONNECT(GE(0,0,0), NETBR_1)
+          VMX_CONNECT(GE(0,0,1), NETBR_2)
+          VMX_CONNECT(GE(0,0,2), NETBR_3)
+          VMX_CONNECT(GE(0,0,3), NETBR_4)
+          VMX_CONNECT(GE(0,0,4), NETBR_5)
+          //VMX_CONNECT(GE(0,0,X), NETBR<x> / NWBR<xy> / LINK<xy> / <max.6char length >)
+    VMX_MPC_END
+  VMX_CHASSIS_END
+
+
+// ----- vBrackla nodes (vPTX10K-type1)
+//-------------------------------------------------------------------------  
+#undef  PTX_CHAS_NAME
+#define PTX_CHAS_NAME vPTX10K-1
+    EVOVPTX_CHASSIS_START_ (PTX_CHAS_NAME)
+        EVOvBracklaRE(PTX_CHAS_NAME,EVOVPTX_DISK1)
+        EVOvBrackla_CSPP_START(PTX_CHAS_NAME,EVOVPTX_FPC_CSPP_IMG)
+            EVOVPTX_CONNECT(IF_ET(0, 0, 0), NETBR_1)
+            EVOVPTX_CONNECT(IF_ET(0, 0, 1), NETBR_2)
+            EVOVPTX_CONNECT(IF_ET(0, 0, 2), NETBR_3)
+            EVOVPTX_CONNECT(IF_ET(0, 0, 3), NETBR_4)
+            EVOVPTX_CONNECT(IF_ET(0, 0, 4), NETBR_5)
+        EVOvBrackla_CSPP_END
+    EVOVPTX_CHASSIS_END_
+
+// ----- vArdbeg nodes (vPTX10K-type2)
+//-------------------------------------------------------------------------  
+#undef    PTX_CHAS_NAME
+#undef    EVOvArdbeg_RE_MEMORY
+#define PTX_CHAS_NAME  vPTX10K_1A
+#define EVOvArdbeg_RE_MEMORY 8192
+    EVOVPTX_CHASSIS_START_ (PTX_CHAS_NAME)
+        EVOvArdbegRE(PTX_CHAS_NAME,EVOVPTX_DISK1)
+        EVOvArdbeg_CSPP_START(PTX_CHAS_NAME,EVOVPTX_FPC_CSPP_IMG)
+            // To Network Bridge: NETBR_1
+            EVOVPTX_CONNECT(IF_ET (0, 0, 0), NETBR_1)
+            // To Network Bridge: NETBR_2
+            EVOVPTX_CONNECT(IF_ET (0, 0, 1), NETBR_2)
+            // To Network Bridge: NETBR_3
+            EVOVPTX_CONNECT(IF_ET (0, 0, 2), NETBR_3)
+            // To Network Bridge: NETBR_4
+            EVOVPTX_CONNECT(IF_ET (0, 0, 3), NETBR_4)
+            // To Network Bridge: NETBR_5
+            EVOVPTX_CONNECT(IF_ET (0, 0, 4), NETBR_5)
+        EVOvArdbeg_CSPP_END
+    EVOVPTX_CHASSIS_END_ 
+
+  
+//## PRIVATE_BRIDGES ##//
+  bridge "NETBR_1" {};
+  bridge "NETBR_2" {};
+  bridge "NETBR_3" {};
+  bridge "NETBR_4" {};
+  bridge "NETBR_5" {};
+  bridge "NETBR_6" {};
+  bridge "ext_gw" {};
+  bridge "ext" {};
+PRIVATE_BRIDGES
+};
+
+

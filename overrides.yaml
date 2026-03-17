@@ -1,0 +1,17 @@
+
+vm_overrides: {}
+
+token_overrides: {}
+
+default_images:
+  linux: cpe4.qcow2
+  modem: lede-disk0.qcow2
+  vmx_re: junos-x86-32-15.1R1.9.vmdk
+  vmx_mpc: vFPC-wrl9.vmdk
+  vqfx_re: jinstall-vqfx-10-f-19.4R1.10.vmdk
+  vqfx_pfe: vqfx-19.4R1-pfe.vmdk
+  vsrx: junos-vsrx3-x86-64-23.2R1.13.qcow2
+  vptx_re_iso: junos-evo-install-ptx-fixed-x86-64-21.4R3-S4.8-EVO.iso
+  vptx_cspp: cspp-ubn22.qcow2
+
+image_overrides: {}

@@ -1,0 +1,179 @@
+
+#include "/vmm/bin/common.defs"
+#include "/vmm/data/user_disks/vmxc/common.vmx.p3.defs"
+
+// -- Image: vMX/vQFX/CentOS/vOpenWRT/LEDE
+#define VMX_DISK basedisk "/vmm/data/test/junos-vmx-x86-64-21.4R3-S2.3.vmdk";
+#define CENTOS7_base basedisk "/root/data/test/centos7_300g.vmdk";
+//#define VQFX10_DISK basedisk "/vmm/data/jinstall-vqfx-10-f-18.4R1.img";
+//#define COSIM_DISK basedisk "/vmm/data/apstra/vqfx-19.4R1-pfe.vmdk";
+#define OPENWRT_base basedisk "/vmm/data/user_disks/test/lede-disk01.vmdk";
+
+#define VQFX10_DISK  basedisk  "/vmm/data/user_disks/test/vqfxre-20.2R2.qcow2";
+#define COSIM_DISK basedisk "/vmm/data/user_disks/test/vqfxpfe-20.2R2.qcow2";
+#define VSRX_DISK basedisk "/vmm/data/user_disks/test/junos-vsrx3-x86-64-23.2R2.21.qcow2";
+
+// -- Image: vArdbeg
+#define EVOVPTX_DISK1 "/vmm/data/user_disks/test/images/junos-evo-install-ptx-fixed-x86-64-21.4R3-S4.8-EVO.iso"
+#define EVOVPTX_FPC_CSPP_IMG "/vmm/data/base_disks/junos/vevo/ubuntu_vm_evo.qcow2"
+#define VMM_ENV_CSPP_CFG_DIR /vmm/data/user_disks/evo_test/EVOvSCAPA/        // Do NOT enclose on quotes!
+
+config "vmm_sample_Toplogy_2" {
+
+#undef VMX_CHASSIS_I2CID
+#undef VMX_CHASSIS_NAME
+#define VMX_CHASSIS_I2CID 21
+
+  vm "vm_openwrt_gw" {
+    hostname "vm_openwrt_gw";
+    OPENWRT_base
+    ncpus 4;
+    memory 256;
+    setvar "boot_noveriexec"       "yes";
+    interface "em0" { bridge "ext"; };
+    interface "em1" { bridge "cpe4p1"; };
+    interface "em2" { bridge "cpe4p2"; };
+    interface "em3" { bridge "ext_gw"; };
+  };
+
+//## vSRX ## 
+vm "vsrx" {
+    hostname "vsrx-1";
+    VSRX_DISK
+    ncpus 1;
+    memory 1024;
+    interface "em0" { EXTERNAL; };
+    interface "em1" { bridge "ext_gw";  }; // ge-0/0/1
+    interface "em2" { bridge "cpe4p1";  }; // ge-0/0/2
+    interface "em3" { bridge "cpe4p2";  }; // ge-0/0/3
+
+};
+
+//## vQFX10k ##
+vm "pecosim-1" {
+        hostname "pecosim-1"; 
+        COSIM_DISK
+        memory 4096;
+        ncpus 2;
+        interface "em0" { EXTERNAL; };
+        interface "em1" { bridge "pecosim_bridge_1"; ipaddr "169.254.0.1"; };
+    };
+ 
+vm "vqfx10k-1" {
+        hostname "vqfx1";
+        VQFX10_DISK
+        //setvar "simulation" "VELIT";
+        setvar "qemu_args" "-smbios type=1,product=VELIT";
+        VQFX_SYSTEST_CONFIG
+        setvar "boot_noveriexec" "YES";
+        interface "em0" { EXTERNAL; };
+        interface "em1" { bridge "pecosim_bridge_1"; ipaddr "169.254.0.2"; };
+        interface "em3" { bridge "ext_gw";}; //xe-0/0/0
+        interface "em4" { bridge "cpe4p1";}; //xe-0/0/1
+        interface "em5" { bridge "cpe4p2";}; //xe-0/0/2  -- MX xe-0/2/0
+    };
+ 
+vm "pecosim-2" {
+        hostname "pecosim-2";
+        COSIM_DISK
+        memory 4096;
+        ncpus 2;
+        interface "em0" { EXTERNAL; };
+        interface "em1" { bridge "pecosim_bridge_2"; ipaddr "169.254.0.1"; };
+    };
+ 
+vm "vqfx10k-2" {
+        hostname "vqfx2";
+        AD_VQFX10_DISK
+        //setvar "simulation" "VELIT";
+        setvar "qemu_args" "-smbios type=1,product=VELIT";
+        VQFX_SYSTEST_CONFIG
+        setvar "boot_noveriexec" "YES";
+        interface "em0" { EXTERNAL; };
+        interface "em1" { bridge "pecosim_bridge_2"; ipaddr "169.254.0.2"; };
+        interface "em3" { bridge "ext_gw";};
+        interface "em4" { bridge "cpe4p1";};
+        interface "em5" { bridge "cpe4p2";};  // xe-0/0/2  -- MX xe-0/2/1
+        interface "em6" { bridge "ext_gw";}; // xe-0/0/3  -- MX xe-1/2/0
+    };
+ 
+
+  #undef VMX_CHASSIS_I2CID
+  #define VMX_CHASSIS_I2CID 48
+
+  #define VMX_CHASSIS_NAME vmx_1
+  VMX_CHASSIS_START()
+    VMX_RE_START(vmx_1, 0)
+        VMX_RE_INSTANCE(vmx_1, VMX_DISK, VMX_RE_I2CID, 0)
+    VMX_RE_END
+   VMX_MPC_START(vmx_rr_MPC,0)
+        VMX_MPC_INSTANCE(vmx_1_MPC, VMX_DISK, VMX_MPC_I2CID, 0)
+          VMX_CONNECT(GE(0,0,0), ext_gw)
+          VMX_CONNECT(GE(0,0,1), ext)
+          VMX_CONNECT(GE(0,0,2), cpe4p1)
+          VMX_CONNECT(GE(0,0,3), cpe4p2)
+          VMX_CONNECT(GE(0,0,4), cpe4p3)
+          //VMX_CONNECT(GE(0,0,5), leaf1p2)
+          //VMX_CONNECT(GE(0,0,6), leaf3p1)
+          //VMX_CONNECT(GE(0,0,7), leaf3p2)
+
+    VMX_MPC_END
+  VMX_CHASSIS_END
+
+
+// ----- vArdbeg nodes [vPTX10003]
+  
+#undef    PTX_CHAS_NAME
+#undef    EVOvArdbeg_RE_MEMORY
+#define PTX_CHAS_NAME  vACX7509_1A
+#define EVOvArdbeg_RE_MEMORY 8192
+    EVOVPTX_CHASSIS_START_ (PTX_CHAS_NAME)
+        EVOvArdbegRE(PTX_CHAS_NAME,EVOVPTX_DISK1)
+        EVOvArdbeg_CSPP_START(PTX_CHAS_NAME,EVOVPTX_FPC_CSPP_IMG)
+            // To Uplink: vMX_Host/external
+            EVOVPTX_CONNECT(IF_ET (0, 0, 0), ext_gw)
+            // To IGW1:
+            EVOVPTX_CONNECT(IF_ET (0, 0, 1), ext)
+            EVOVPTX_CONNECT(IF_ET (0, 0, 2), cpe4p1)
+            // To IGW2:
+            EVOVPTX_CONNECT(IF_ET (0, 0, 3), cpe4p2)
+            EVOVPTX_CONNECT(IF_ET (0, 0, 4), cpe4p4)
+        EVOvArdbeg_CSPP_END
+    EVOVPTX_CHASSIS_END_ 
+
+//#define EVOVPTX_DISK1 "/vmm/data/user_disks/test/junos-evo-install-ptx-fixed-x86-64-21.4R3-S4.8-EVO.iso"
+//#define EVOVPTX_FPC_CSPP_IMG "/vmm/data/user_disks/evo_test/images/ubuntu_vm_evo.qcow2"
+//#define VMM_ENV_CSPP_CFG_DIR /vmm/data/user_disks/evo_test/EVOvBRACKLA/COSIMPP/
+//#undef  PTX_CHAS_NAME
+//#define PTX_CHAS_NAME vptx
+
+//   EVOVPTX_CHASSIS_START_ (PTX_CHAS_NAME)
+//       EVOvBracklaRE(PTX_CHAS_NAME,EVOVPTX_DISK1)
+//       EVOvBrackla_CSPP_START(PTX_CHAS_NAME,EVOVPTX_FPC_CSPP_IMG)
+//       EVOVPTX_CONNECT(IF_ET(0, 0, 0), leaf1p1)
+//       EVOVPTX_CONNECT(IF_ET(0, 0, 1), leaf1p1)
+//       EVOVPTX_CONNECT(IF_ET(0, 0, 2), leaf1p2)
+//       EVOVPTX_CONNECT(IF_ET(0, 0, 3), external_gw)
+//       EVOVPTX_CONNECT(IF_ET(0, 0, 4), external)
+//       EVOvBrackla_CSPP_END
+//   EVOVPTX_CHASSIS_END_
+
+
+
+  
+//## PRIVATE_BRIDGES ##//
+
+  bridge "reserved_bridge" {};
+  bridge "cpe3p1" {};
+  bridge "cpe3p2" {};
+  bridge "cpe4p1" {};
+  bridge "cpe4p2" {};
+  bridge "cpe4p3" {};
+  bridge "cpe4p4" {};
+
+  bridge "ext_gw" {};
+  bridge "ext" {};
+PRIVATE_BRIDGES
+};
+
+
