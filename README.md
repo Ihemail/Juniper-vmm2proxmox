@@ -56,7 +56,7 @@ This README consolidates **all logic, knobs, VM specifications, bridge behavior,
 │   ├── main.tf
 │   ├── variables.tf
 │   ├── outputs.tf
-│   ├── locals.tf
+│   ├── locals.tf...
 └── vmmconf_sample/
     ├── Master.conf
     ├── vModem.conf
@@ -64,6 +64,7 @@ This README consolidates **all logic, knobs, VM specifications, bridge behavior,
     ├── vPTX10k.conf
     ├── vQFX10k.conf
     ├── vSRX.conf
+    └── Linux.conf...
 ```
 
 ---
@@ -239,8 +240,10 @@ Where normalization = lowercasing + remove all non-alphanumeric.
 `create_bridges.py`:
 - Appends definitions inside `/etc/network/interfaces`
 - Adds markers:
-  - # --- vmm2proxmox managed bridges (start)
-  - # --- vmm2proxmox managed bridges (end)
+```
+  # --- vmm2proxmox managed bridges (start)
+  # --- vmm2proxmox managed bridges (end)
+```
 - Calls `ifreload -a`
 - Records created bridges in `state/created_bridges.json`
 
