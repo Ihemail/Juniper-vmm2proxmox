@@ -381,6 +381,14 @@ python3 vmm_to_proxmox.py --vmm ./input.vmm --type-registry ./type_registry.yaml
 ```
 
 ### 13.2 Apply (pre-flight bridges + disk selections run automatically)
+#### Brief
+```bash
+cd terraform
+terraform init
+terraform apply -auto-approve
+```
+
+#### Detailed
 ```bash
 cd terraform
 terraform init
@@ -395,20 +403,62 @@ terraform apply -auto-approve \
 
 > **Automatic Pre-flight Setup:** `terraform apply` automatically runs `scripts/pre_apply_setup.py` at the beginning to create any missing bridges and collect disk-image selections. All CLI logs from this pre-flight step will be visible in the Terraform output.
 
-### 13.3 Status / Shutdown / Manual bridge delete
+## 13.3 Successful terraform completion log & Node/Server VM login
+Here is a sample of Successful completion log of the `terraform apply` command :
+```bash
+...
+null_resource.attach_and_start (local-exec): [SLEEP] 30s
+null_resource.attach_and_start (local-exec): === qm list ===
+null_resource.attach_and_start (local-exec):       VMID NAME                 STATUS     MEM(MB)    BOOTDISK(GB) PID
+null_resource.attach_and_start (local-exec):       1601 vPTX10001-re         stopped    4096              40.00 0
+null_resource.attach_and_start (local-exec):       1602 vPTX10001-fpc0       stopped    3280              39.06 0
+null_resource.attach_and_start (local-exec):       6000 vm-centos-1          running    256                5.00 29042
+null_resource.attach_and_start (local-exec):       6001 vm-openwrt-gw        running    128                0.05 29292
+null_resource.attach_and_start (local-exec):       6002 vsrx                 running    4096              18.01 27542
+null_resource.attach_and_start (local-exec):       6003 vqfx10k-1-re         running    1200               4.00 27049
+null_resource.attach_and_start (local-exec):       6004 pecosim-1            running    1024              10.00 27337
+null_resource.attach_and_start (local-exec):       6005 vmx-1-re             running    1230              27.00 26588
+null_resource.attach_and_start (local-exec):       6006 vmx-1-mpc0           running    2250              10.28 26755
+null_resource.attach_and_start (local-exec):       6007 vPTX10K-1            running    4096              40.00 27771
+null_resource.attach_and_start (local-exec):       6008 vPTX10K-1-cspp0      running    3280              39.06 28292
+null_resource.attach_and_start (local-exec):       6009 vPTX10K-1A           running    4096              40.00 28025
+null_resource.attach_and_start (local-exec):       6010 vPTX10K-1A-cspp0     running    3280              39.06 28665
+
+null_resource.attach_and_start: Creation complete after 13m58s [id=7216886383671437999]
+
+Apply complete! Resources: 26 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+deploy_status = "Deployed; state recorded under ./state"
+PS C:\Users\test\Desktop\proxmox_full_deploy_v6\terraform> 
+```
+
+#### Node/VM login - console/serial
+Once `terraform apply` command is successfully completed, then get the VMID of the RE node/server for initial configuration. VMIDs can be fetched from the last output of `terraform apply' command execution or login to Proxmox server and execute below command :
+```bash
+qm list
+```
+
+Next login to the RE node/server(vCPE/Linux/vSRX) for initial configuration with `qm terminal <vmid>`
+```bash
+qm terminal <vmid>
+```
+
+### 13.4 Status / Shutdown / Manual bridge delete
 ```bash
 ./scripts/status_all.sh           # Show VM and bridge status
 ./scripts/shutdown_all.sh         # Shutdown all VMs
 ./scripts/delete_bridges.sh       # Delete all created bridges (manual prompt)
 ```
 
-### 13.4 Manual Cleanup (after destroy)
+### 13.5 Manual Cleanup (after destroy)
 ```bash
 cd scripts
 ./manual_cleanup.sh               # Cleans up VMs and bridges after terraform destroy
 ```
 
-### 13.5 Destroy
+### 13.6 Destroy
 ```bash
 cd terraform
 terraform destroy -auto-approve   -var output_dir="../output"   -var config_yaml="../config.yaml"   -var vmm_file="../output/input.vmm"
