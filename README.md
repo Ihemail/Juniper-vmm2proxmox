@@ -137,7 +137,7 @@ IDE1: extra_disk_ide1 (e.g., vmxhdd.qcow2)
 Boot: order=ide0
 ```
 
-### vMX MPC
+#### vMX MPC
 ```
 Machine: pc-i440fx-7.0
 Cores: 3
@@ -149,8 +149,8 @@ NICs:
 Disk: IDE0: VMX_DISK
 ```
 
-## 4.4 vPTX Platform
-### vPTX RE
+### 4.4 vPTX Platform
+#### vPTX RE
 ```
 Machine: pc-i440fx-7.0
 Cores: 4
@@ -161,7 +161,7 @@ IDE2: ISO (junos-evo-install.iso)
 Boot: order=ide0;ide2
 ```
 
-### vPTX CSPP
+#### vPTX CSPP
 ```
 Machine: pc-i440fx-7.0
 Cores: 3
@@ -173,8 +173,8 @@ IDE0: CSPP QCOW2 image
 Boot: order=ide0
 ```
 
-## 4.5 vQFX Platform
-### vQFX RE
+### 4.5 vQFX Platform
+#### vQFX RE
 ```
 Machine: pc-i440fx-7.0
 Cores: 1
@@ -194,7 +194,7 @@ Boot: order=ide0
 > ```
 > This establishes the internal RE↔PFE communication link over `em1` and is required before any data-plane interfaces become operational.
 
-### vQFX PFE
+#### vQFX PFE
 ```
 Machine: pc-i440fx-7.0
 Cores: 1
@@ -206,7 +206,7 @@ IDE0: vQFX PFE image (e.g., vqfx10k-pfe-20.2R1.10.img)
 Boot: order=ide0
 ```
 
-## 4.6 vSRX Platform
+### 4.6 vSRX Platform
 ```
 Machine: pc-i440fx-7.0
 Cores: 2
@@ -220,23 +220,23 @@ Boot: order=ide0
 ```
 
 ---
-# 5. Bridge Logic
+## 5. Bridge Logic
 Two categories of bridges exist:
 
-## 5.1 Infra Bridges (never created/deleted)
+### 5.1 Infra Bridges (never created/deleted)
 ```
 vmbr_mgmt
 vmbr6_fpc
 ```
 
-## 5.2 Inter‑connection Bridges (auto-managed)
+### 5.2 Inter‑connection Bridges (auto-managed)
 All VMM bridges become:
 ```
 vmc_<normalized>
 ```
 Where normalization = lowercasing + remove all non-alphanumeric.
 
-### Creation
+#### Creation
 `create_bridges.py`:
 - Appends definitions inside `/etc/network/interfaces`
 - Adds markers:
@@ -247,7 +247,7 @@ Where normalization = lowercasing + remove all non-alphanumeric.
 - Calls `ifreload -a`
 - Records created bridges in `state/created_bridges.json`
 
-### Deletion
+#### Deletion
 Only removed if:
 - During `terraform destroy`
 - And you type **yes** within 30 seconds
@@ -256,7 +256,7 @@ Only removed if:
 Safe-by-default: bridges remain unless explicitly deleted.
 
 ---
-# 6. VLAN Allocation Logic
+## 6. VLAN Allocation Logic
 Defined in `type_registry.yaml`:
 ```yaml
 vlan_policy:
@@ -264,7 +264,7 @@ vlan_policy:
   step: 10
   order: [vmx, vptx, vqfx, vsrx]
 ```
-### Computation
+#### Computation
 ```
 vmx-1  → VLAN 1010
 vmx-2  → VLAN 1020
@@ -283,7 +283,7 @@ vlan: base_plus_1 → VLAN N+1
 ```
 
 ---
-# 7. Image Resolution Logic
+## 7. Image Resolution Logic
 Priority:
 1. Token-based image from VMM `#define TOKEN basedisk "path"`
 2. Override (overrides.yaml)
@@ -303,7 +303,7 @@ ide2: local:iso/<iso>
 If not found and `interactive=true`, deploy prompts you to choose an ISO from `iso_storage_path`.
 
 ---
-# 8. Behavior Knobs (type_registry.yaml)
+## 8. Behavior Knobs (type_registry.yaml)
 ```
 interactive: false/true
 unknown_action: skip/fail
@@ -318,7 +318,7 @@ vptx_cspp_mode: single/multi
 These fully control deploy logic.
 
 ---
-# 9. MAC Address Logic
+## 9. MAC Address Logic
 Deterministic MACs:
 ```
 <mac_prefix>:<3-byte SHA1 hash>
@@ -326,7 +326,7 @@ Deterministic MACs:
 Ensures reproducibility across runs.
 
 ---
-# 10. Lifecycle
+## 10. Lifecycle
 
 1. Convert VMM to generated Proxmox artifacts in `output/`.
 2. Run Terraform apply (includes automatic pre-flight bridge/image-selection checks).
@@ -336,7 +336,7 @@ Ensures reproducibility across runs.
 For exact, copy-paste commands, use the canonical section **# 13. Usage** below.
 
 ---
-# 11. Notes
+## 11. Notes
 - All images must live **on Proxmox** under `/root/import`.
 - vPTX RE `extra_disk_ide0` must exist on Proxmox (no blank ide0 fallback).
 - vPTX RE ISO is resolved from `iso_storage_path` and attached as CDROM on `ide2`.
@@ -353,7 +353,7 @@ For exact, copy-paste commands, use the canonical section **# 13. Usage** below.
 - All disks attach via IDE as per your preference.
 
 ---
-# 12. Prerequisites
+## 12. Prerequisites
 Before running convert/apply/destroy commands, ensure:
 
 - **Python 3** is installed and available as `python3` (Linux) or `python` / `py -3` (Windows)
@@ -374,13 +374,13 @@ python -m pip show paramiko pyyaml
 ```
 
 ---
-# 13. Usage
-## 13.1 Convert
+## 13. Usage
+### 13.1 Convert
 ```bash
 python3 vmm_to_proxmox.py --vmm ./input.vmm --type-registry ./type_registry.yaml --overrides ./overrides.yaml --out ./output
 ```
 
-## 13.2 Apply (pre-flight bridges + disk selections run automatically)
+### 13.2 Apply (pre-flight bridges + disk selections run automatically)
 ```bash
 cd terraform
 terraform init
@@ -395,26 +395,26 @@ terraform apply -auto-approve \
 
 > **Automatic Pre-flight Setup:** `terraform apply` automatically runs `scripts/pre_apply_setup.py` at the beginning to create any missing bridges and collect disk-image selections. All CLI logs from this pre-flight step will be visible in the Terraform output.
 
-## 13.3 Status / Shutdown / Manual bridge delete
+### 13.3 Status / Shutdown / Manual bridge delete
 ```bash
 ./scripts/status_all.sh           # Show VM and bridge status
 ./scripts/shutdown_all.sh         # Shutdown all VMs
 ./scripts/delete_bridges.sh       # Delete all created bridges (manual prompt)
 ```
 
-## 13.4 Manual Cleanup (after destroy)
+### 13.4 Manual Cleanup (after destroy)
 ```bash
 cd scripts
 ./manual_cleanup.sh               # Cleans up VMs and bridges after terraform destroy
 ```
 
-## 13.5 Destroy
+### 13.5 Destroy
 ```bash
 cd terraform
 terraform destroy -auto-approve   -var output_dir="../output"   -var config_yaml="../config.yaml"   -var vmm_file="../output/input.vmm"
 ```
 
-# 14. Helper Scripts - Ubuntu
+## 14. Helper Scripts - Ubuntu
 All helper scripts are in the `scripts/` folder:
 
 - create_bridges.py         - Create Proxmox bridges from VMM config  
@@ -486,7 +486,7 @@ All helper scripts are in the `scripts/` folder:
 	./scripts/status_all.sh
 	```
 
-# 15. Helper Scripts - Windows (`scripts/windows`)
+## 15. Helper Scripts - Windows (`scripts/windows`)
 Run the Windows copies in `scripts/windows` directly with Python (no OpenSSH/`ssh.exe` required):
 
 ```powershell
@@ -561,18 +561,18 @@ Optional interactive cleanup wrapper:
 
 Optional: you can still use the PowerShell wrappers in `scripts/windows/*.ps1`, but direct Python execution is the recommended Windows path.
 
-# 16. Summary
+## 16. Summary
 This bundle provides a deterministic, safe, reproducible automation pipeline for deploying complex multi-VM Juniper-based labs on Proxmox—including bridge creation, VLAN wiring, image handling, VM boot sequencing, and stateful teardown.
 
-# 17. Extras
+## 17. Extras
 
-## Windows 10/11 - Python 3 and Terraform Installation
+### Windows 10/11 - Python 3 and Terraform Installation
 
-### 📌 Official Windows install links
+#### 📌 Official Windows install links
 - Python 3 (Windows): https://www.python.org/downloads/windows/
 - Terraform install docs (Windows): https://developer.hashicorp.com/terraform/install#windows
 
-### Install using winget (recommended)
+#### Install using winget (recommended)
 ```powershell
 # Python 3
 winget install -e --id Python.Python.3.12
@@ -586,7 +586,7 @@ py -3 --version
 terraform --version
 ```
 
-### Install using Chocolatey (alternative)
+#### Install using Chocolatey (alternative)
 ```powershell
 # Python 3
 choco install -y python
@@ -599,38 +599,38 @@ python --version
 terraform --version
 ```
 
-### Configure pip dependencies for this project (Windows)
+#### Configure pip dependencies for this project (Windows)
 ```powershell
 python -m pip install --upgrade pip
 python -m pip install paramiko pyyaml
 ```
 
-## Python 3 Installation on Ubuntu (Latest Version)
+### Python 3 Installation on Ubuntu (Latest Version)
 
-### 📌 Official Python Downloads  
+#### 📌 Official Python Downloads  
 You can always download the latest Python releases from the official Python.org website:  
 👉 https://www.python.org/downloads/
 
 ---
 
-## Installing Python 3 on Ubuntu
+### Installing Python 3 on Ubuntu
 
-### **1. Update system packages**
+#### **1. Update system packages**
 ```
 sudo apt update
 ```
 
-### **2. Install Python and set `python` → `python3`**
+#### **2. Install Python and set `python` → `python3`**
 ```
 sudo apt install -y python-is-python3
 ```
 
-### **3. Install Paramiko**
+#### **3. Install Paramiko**
 ```
 sudo python -m pip install paramiko
 ```
 
-### **4. Install networking tools**
+#### **4. Install networking tools**
 ```
 sudo apt install -y iproute2 bridge-utils net-tools
 sudo modprobe bridge
@@ -638,35 +638,35 @@ sudo modprobe bridge
 
 ---
 
-# Terraform Installation on Ubuntu
+## Terraform Installation on Ubuntu
 Terraform can be installed using the official HashiCorp APT repository.
 
-### 📌 Official Terraform Installation Page
+#### 📌 Official Terraform Installation Page
 👉 https://developer.hashicorp.com/terraform/install
 
-### **1. Install dependencies**
+#### **1. Install dependencies**
 ```
 sudo apt update
 sudo apt install -y gnupg software-properties-common curl
 ```
 
-### **2. Add HashiCorp GPG key**
+#### **2. Add HashiCorp GPG key**
 ```
 wget -O- https://apt.releases.hashicorp.com/gpg |   gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
 ```
 
-### **3. Add HashiCorp APT repository**
+#### **3. Add HashiCorp APT repository**
 ```
 echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" |   sudo tee /etc/apt/sources.list.d/hashicorp.list
 ```
 
-### **4. Install Terraform**
+#### **4. Install Terraform**
 ```
 sudo apt update
 sudo apt install terraform
 ```
 
-### **5. Verify installation**
+#### **5. Verify installation**
 ```
 terraform --version
 ```
