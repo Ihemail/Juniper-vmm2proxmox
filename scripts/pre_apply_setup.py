@@ -42,6 +42,37 @@ def remote_ls(cfg: dict, path: str)->list[str]:
 def remote_exists(cfg: dict, path: str)->bool:
     return ssh_run(cfg,f"test -f {path}",check=False).returncode==0
 
+def vmid_exists_on_proxmox(cfg: dict, vmid: int)->bool:
+    # Check all VM resources from Proxmox cluster API (covers qemu and lxc entries).
+    cp=ssh_run(cfg, "pvesh get /cluster/resources --type vm --output-format json", check=False)
+    if cp.returncode==0:
+        try:
+            data=json.loads(cp.stdout or "[]")
+            for item in data:
+                if int(item.get('vmid', -1))==vmid:
+                    return True
+            return False
+        except Exception:
+            pass
+    # Fallback: direct qemu check when cluster query is unavailable.
+    return ssh_run(cfg, f"qm status {vmid}", check=False).returncode==0
+
+def fail_if_vmid_start_exists(cfg: dict, reg: dict, type_registry_path: str):
+    behavior=reg.get('behavior', {}) if isinstance(reg, dict) else {}
+    vmid_start=behavior.get('vmid_start')
+    if vmid_start is None:
+        return
+    try:
+        vmid_start=int(vmid_start)
+    except Exception:
+        die(f"Invalid behavior.vmid_start in {type_registry_path}: {vmid_start!r}")
+    if vmid_exists_on_proxmox(cfg, vmid_start):
+        suggestion=vmid_start+100
+        die(
+            f"VMID <{vmid_start}> is already present in the proxmox server. "
+            f"Please modify {type_registry_path} with vmid_start: {suggestion} and execute terraform apply again."
+        )
+
 def read_choice(prompt: str)->str:
     if sys.stdin.isatty():
         try:
@@ -168,6 +199,10 @@ def main():
     cfg=load_yaml(Path(args.config))['proxmox']
     reg=load_yaml(Path(args.type_registry))
     plan=json.loads(Path(args.plan).read_text())
+
+    print('[STEP] Validating configured vmid_start is free on Proxmox ...')
+    fail_if_vmid_start_exists(cfg, reg, args.type_registry)
+    print('[OK] vmid_start is available')
 
     image_dir=cfg.get('image_dir', reg.get('behavior',{}).get('image_dir','/root/import'))
     ensure_state_dir(Path(args.state_dir))
