@@ -240,7 +240,9 @@ Where normalization = lowercasing + remove all non-alphanumeric.
 `create_bridges.py`:
 - Appends definitions inside `/etc/network/interfaces`
 - Adds markers:
+  
   `  # --- vmm2proxmox managed bridges (start)`
+  
   `  # --- vmm2proxmox managed bridges (end)`
 - Calls `ifreload -a`
 - Records created bridges in `state/created_bridges.json`
