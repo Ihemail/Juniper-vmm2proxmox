@@ -272,8 +272,6 @@ vptx-1 → VLAN 1030
 vptx-2 → VLAN 1040
 vqfx-1 → VLAN 1050
 vqfx-2 → VLAN 1060
-vsrx-1 → VLAN 1070
-vsrx-2 → VLAN 1080
 ```
 
 vPTX NIC tags:
